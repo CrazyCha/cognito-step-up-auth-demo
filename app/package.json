@@ -1,0 +1,14 @@
+{
+  "name": "cognito-step-up-auth-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Sample application demonstrating Cognito step-up auth challenge flow",
+  "scripts": {
+    "setup": "node src/setup.js",
+    "demo": "node src/demo.js"
+  },
+  "dependencies": {
+    "@aws-sdk/client-cognito-identity-provider": "^3.600.0",
+    "dotenv": "^16.4.0"
+  }
+}
