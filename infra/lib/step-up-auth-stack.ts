@@ -123,7 +123,7 @@ export class StepUpAuthStack extends cdk.Stack {
     // ── Cognito User Pool ─────────────────────────────────────────────────────
     this.userPool = new cognito.UserPool(this, 'UserPool', {
       userPoolName: `StepUpAuth-Demo-${this.stackName}`,
-      selfSignUpEnabled: true,
+      selfSignUpEnabled: false,
       signInAliases: { email: true },
       autoVerify: { email: true },
       standardAttributes: {
