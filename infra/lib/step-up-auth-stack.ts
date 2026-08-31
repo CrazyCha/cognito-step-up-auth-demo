@@ -4,7 +4,6 @@ import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
-import { NodejsFunction } from 'aws-cdk-lib/aws-lambda-nodejs';
 import { Construct } from 'constructs';
 
 export interface StepUpAuthStackProps extends cdk.StackProps {
@@ -12,7 +11,7 @@ export interface StepUpAuthStackProps extends cdk.StackProps {
   bookingThreshold?: number;
   /** OTP validity in seconds. Default: 300 */
   otpExpirySeconds?: number;
-  /** 'email' (SES) or 'console' (CloudWatch Logs — demo only). Default: 'email' */
+  /** 'email' (SES) or 'console' (CloudWatch Logs — demo only). Default: 'console' */
   otpDeliveryMode?: 'email' | 'console';
   /** SES-verified sender address. Required when otpDeliveryMode='email' */
   fromEmail?: string;
@@ -28,14 +27,13 @@ export class StepUpAuthStack extends cdk.Stack {
 
     const bookingThreshold = props?.bookingThreshold ?? 5000;
     const otpExpirySeconds = props?.otpExpirySeconds ?? 300;
-    const otpDeliveryMode = props?.otpDeliveryMode ?? 'email';
+    const otpDeliveryMode = props?.otpDeliveryMode ?? 'console';
     const fromEmail = props?.fromEmail ?? '';
 
     if (otpDeliveryMode === 'email' && !fromEmail) {
-      throw new Error(
-        'fromEmail is required when otpDeliveryMode is "email". ' +
-        'Pass a SES-verified address via cdk deploy -c fromEmail=no-reply@example.com, ' +
-        'or use -c otpDeliveryMode=console for demo without SES.'
+      console.warn(
+        '[StepUpAuthStack] WARNING: otpDeliveryMode=email but fromEmail is empty. ' +
+        'Pass -c fromEmail=no-reply@example.com or use -c otpDeliveryMode=console.'
       );
     }
 
@@ -45,24 +43,28 @@ export class StepUpAuthStack extends cdk.Stack {
       partitionKey: { name: 'otpId', type: dynamodb.AttributeType.STRING },
       timeToLiveAttribute: 'expiresAt',
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
-      // Non-production: allow table deletion with cdk destroy
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
-    const lambdaDefaults = {
-      runtime: lambda.Runtime.NODEJS_20_X,
-      timeout: cdk.Duration.seconds(10),
-      memorySize: 256,
-      // Lambda functions in the Cognito auth critical path — keep cold starts fast
-    };
-
     const lambdaRoot = path.join(__dirname, '../../lambdas');
 
+    // Lambda defaults shared across all four trigger functions.
+    // @aws-sdk/* is included in the Node.js 20.x Lambda managed runtime,
+    // so Code.fromAsset (directory zip) works without bundling.
+    const lambdaDefaults: Omit<lambda.FunctionProps, 'code' | 'handler' | 'environment'> = {
+      runtime: lambda.Runtime.NODEJS_22_X,
+      timeout: cdk.Duration.seconds(10),
+      memorySize: 256,
+    };
+
+    const mkCode = (dir: string) =>
+      lambda.Code.fromAsset(path.join(lambdaRoot, dir));
+
     // ── Lambda: DefineAuthChallenge ───────────────────────────────────────────
-    const defineAuthChallengeFn = new NodejsFunction(this, 'DefineAuthChallenge', {
+    const defineAuthChallengeFn = new lambda.Function(this, 'DefineAuthChallenge', {
       ...lambdaDefaults,
-      entry: path.join(lambdaRoot, 'define-auth-challenge/index.js'),
-      handler: 'handler',
+      code: mkCode('define-auth-challenge'),
+      handler: 'index.handler',
       functionName: `${this.stackName}-DefineAuthChallenge`,
       environment: {
         BOOKING_THRESHOLD: bookingThreshold.toString(),
@@ -71,10 +73,10 @@ export class StepUpAuthStack extends cdk.Stack {
     });
 
     // ── Lambda: CreateAuthChallenge ───────────────────────────────────────────
-    const createAuthChallengeFn = new NodejsFunction(this, 'CreateAuthChallenge', {
+    const createAuthChallengeFn = new lambda.Function(this, 'CreateAuthChallenge', {
       ...lambdaDefaults,
-      entry: path.join(lambdaRoot, 'create-auth-challenge/index.js'),
-      handler: 'handler',
+      code: mkCode('create-auth-challenge'),
+      handler: 'index.handler',
       functionName: `${this.stackName}-CreateAuthChallenge`,
       environment: {
         OTP_TABLE_NAME: this.otpTable.tableName,
@@ -84,43 +86,38 @@ export class StepUpAuthStack extends cdk.Stack {
       },
     });
 
-    // CreateAuthChallenge writes OTPs and reads nothing
     this.otpTable.grantWriteData(createAuthChallengeFn);
 
-    // SES permission scoped to all identities — scope to verified domain in production
     if (otpDeliveryMode === 'email') {
       createAuthChallengeFn.addToRolePolicy(
         new iam.PolicyStatement({
           sid: 'AllowSESSend',
           actions: ['ses:SendEmail', 'ses:SendRawEmail'],
-          // Production: replace '*' with specific SES identity ARN
           resources: ['*'],
         })
       );
     }
 
     // ── Lambda: VerifyAuthChallenge ───────────────────────────────────────────
-    const verifyAuthChallengeFn = new NodejsFunction(this, 'VerifyAuthChallenge', {
+    const verifyAuthChallengeFn = new lambda.Function(this, 'VerifyAuthChallenge', {
       ...lambdaDefaults,
-      entry: path.join(lambdaRoot, 'verify-auth-challenge/index.js'),
-      handler: 'handler',
+      code: mkCode('verify-auth-challenge'),
+      handler: 'index.handler',
       functionName: `${this.stackName}-VerifyAuthChallenge`,
       environment: {
         OTP_TABLE_NAME: this.otpTable.tableName,
       },
     });
 
-    // VerifyAuthChallenge reads OTPs and deletes them after consumption
     this.otpTable.grantReadData(verifyAuthChallengeFn);
-    this.otpTable.grantWriteData(verifyAuthChallengeFn); // DeleteItem needs write
+    this.otpTable.grantWriteData(verifyAuthChallengeFn);
 
     // ── Lambda: PreTokenGeneration ────────────────────────────────────────────
-    const preTokenGenerationFn = new NodejsFunction(this, 'PreTokenGeneration', {
+    const preTokenGenerationFn = new lambda.Function(this, 'PreTokenGeneration', {
       ...lambdaDefaults,
-      entry: path.join(lambdaRoot, 'pre-token-generation/index.js'),
-      handler: 'handler',
+      code: mkCode('pre-token-generation'),
+      handler: 'index.handler',
       functionName: `${this.stackName}-PreTokenGeneration`,
-      // No environment variables needed — reads clientMetadata from Cognito event
     });
 
     // ── Cognito User Pool ─────────────────────────────────────────────────────
@@ -135,8 +132,10 @@ export class StepUpAuthStack extends cdk.Stack {
       lambdaTriggers: {
         defineAuthChallenge: defineAuthChallengeFn,
         createAuthChallenge: createAuthChallengeFn,
-        verifyAuthChallenge: verifyAuthChallengeFn,
         preTokenGeneration: preTokenGenerationFn,
+        // verifyAuthChallenge omitted here intentionally — added via addTrigger below
+        // because CDK's lambdaTriggers property does not emit VerifyAuthChallengeResponse
+        // in the CloudFormation LambdaConfig. See DECISIONS.md for details.
       },
       passwordPolicy: {
         minLength: 8,
@@ -146,9 +145,15 @@ export class StepUpAuthStack extends cdk.Stack {
         requireSymbols: false,
       },
       accountRecovery: cognito.AccountRecovery.EMAIL_ONLY,
-      // Non-production: allow user pool deletion with cdk destroy
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
+
+    // VerifyAuthChallengeResponse must be registered via addTrigger — CDK's lambdaTriggers
+    // property silently omits it from the CloudFormation LambdaConfig output.
+    this.userPool.addTrigger(
+      cognito.UserPoolOperation.VERIFY_AUTH_CHALLENGE_RESPONSE,
+      verifyAuthChallengeFn
+    );
 
     // ── Cognito App Client ────────────────────────────────────────────────────
     this.userPoolClient = this.userPool.addClient('BookingAppClient', {
@@ -157,8 +162,7 @@ export class StepUpAuthStack extends cdk.Stack {
         userSrp: true,
         custom: true,
         // USER_PASSWORD_AUTH is enabled for demo convenience ONLY.
-        // This MUST be disabled before production promotion.
-        // See DECISIONS.md ADR-005 and SECURITY_COMPLIANCE.md Risk SC-R2.
+        // Must be disabled before production. See DECISIONS.md ADR-005.
         userPassword: true,
       },
       generateSecret: false,

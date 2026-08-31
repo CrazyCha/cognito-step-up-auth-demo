@@ -1,0 +1,6 @@
+{
+  "name": "cognito-step-up-auth-demo",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": ["infra", "app"]
+}

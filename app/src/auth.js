@@ -1,5 +1,21 @@
 'use strict';
 
+/**
+ * Cognito auth helpers for the step-up authentication demo.
+ *
+ * Architecture note on clientMetadata:
+ *   AWS Cognito does NOT pass ClientMetadata from InitiateAuth to
+ *   DefineAuthChallenge or CreateAuthChallenge Lambda triggers.
+ *   It only passes ClientMetadata to VerifyAuthChallenge (from RespondToAuthChallenge)
+ *   and to PreTokenGeneration.
+ *
+ *   Therefore:
+ *   - The booking-amount threshold check is done HERE in the application layer.
+ *   - The app calls CUSTOM_AUTH only when step-up is needed.
+ *   - bookingAmount is passed via RespondToAuthChallenge clientMetadata
+ *     so PreTokenGeneration can embed it in the token claim.
+ */
+
 const {
   CognitoIdentityProviderClient,
   InitiateAuthCommand,
@@ -10,141 +26,116 @@ const client = new CognitoIdentityProviderClient({
   region: process.env.AWS_REGION || 'us-east-1',
 });
 
+const BOOKING_THRESHOLD = parseFloat(process.env.BOOKING_THRESHOLD || '5000');
+
 /**
  * Signs in a user with username and password (USER_PASSWORD_AUTH).
  *
- * NOTE: USER_PASSWORD_AUTH is enabled on the demo app client for simplicity.
- * Production apps must use USER_SRP_AUTH. See DECISIONS.md ADR-005.
+ * NOTE: USER_PASSWORD_AUTH is for demo only. Production must use USER_SRP_AUTH.
+ * See DECISIONS.md ADR-005 and SECURITY_COMPLIANCE.md Risk SC-R2.
  *
  * @returns {{ accessToken, idToken, refreshToken }}
  */
 async function signIn(username, password, clientId) {
-  const command = new InitiateAuthCommand({
+  const response = await client.send(new InitiateAuthCommand({
     AuthFlow: 'USER_PASSWORD_AUTH',
     ClientId: clientId,
-    AuthParameters: {
-      USERNAME: username,
-      PASSWORD: password,
-    },
-  });
-
-  const response = await client.send(command);
+    AuthParameters: { USERNAME: username, PASSWORD: password },
+  }));
 
   if (response.AuthenticationResult) {
-    return {
-      accessToken: response.AuthenticationResult.AccessToken,
-      idToken: response.AuthenticationResult.IdToken,
-      refreshToken: response.AuthenticationResult.RefreshToken,
-    };
+    return extractTokens(response.AuthenticationResult);
   }
-
-  throw new Error(`Unexpected sign-in response: ${response.ChallengeName}`);
+  throw new Error(`Unexpected sign-in challenge: ${response.ChallengeName}`);
 }
 
 /**
- * Initiates a CUSTOM_AUTH session for step-up authentication.
+ * Initiates step-up authentication via CUSTOM_AUTH.
  *
- * Passes bookingAmount via clientMetadata so DefineAuthChallenge can decide
- * whether step-up is required.
+ * The app performs the threshold check here. If bookingAmount is below
+ * the threshold, CUSTOM_AUTH is not called — no step-up is needed.
  *
- * @returns {{ session, challengeParameters, requiresStepUp }}
+ * @returns {{ requiresStepUp, session, challengeParameters, tokens }}
  */
 async function initiateStepUp(username, bookingAmount, clientId) {
-  const command = new InitiateAuthCommand({
+  // Application-layer threshold check (Cognito Lambda cannot receive this via InitiateAuth)
+  if (bookingAmount <= BOOKING_THRESHOLD) {
+    return { requiresStepUp: false, session: null, challengeParameters: null, tokens: null };
+  }
+
+  const response = await client.send(new InitiateAuthCommand({
     AuthFlow: 'CUSTOM_AUTH',
     ClientId: clientId,
-    AuthParameters: {
-      USERNAME: username,
-    },
-    ClientMetadata: {
-      bookingAmount: String(bookingAmount),
-      stepUp: 'true',
-    },
-  });
-
-  const response = await client.send(command);
-
-  if (response.AuthenticationResult) {
-    // bookingAmount was below threshold — tokens issued directly
-    return {
-      session: null,
-      challengeParameters: null,
-      tokens: {
-        accessToken: response.AuthenticationResult.AccessToken,
-        idToken: response.AuthenticationResult.IdToken,
-        refreshToken: response.AuthenticationResult.RefreshToken,
-      },
-      requiresStepUp: false,
-    };
-  }
+    AuthParameters: { USERNAME: username },
+    // Note: ClientMetadata here does NOT reach Lambda triggers (Cognito service limitation).
+    // bookingAmount is passed in RespondToAuthChallenge instead.
+  }));
 
   if (response.ChallengeName === 'CUSTOM_CHALLENGE') {
     return {
+      requiresStepUp: true,
       session: response.Session,
       challengeParameters: response.ChallengeParameters,
       tokens: null,
-      requiresStepUp: true,
     };
   }
 
-  throw new Error(`Unexpected challenge: ${response.ChallengeName}`);
+  throw new Error(`Unexpected response from InitiateAuth: ${response.ChallengeName || 'unknown'}`);
 }
 
 /**
  * Responds to the CUSTOM_CHALLENGE with the user-provided OTP.
  *
- * Passes stepUp=true in clientMetadata so PreTokenGeneration injects
- * the step_up claim into the resulting tokens.
+ * Passes bookingAmount via clientMetadata here — this DOES reach VerifyAuthChallenge
+ * and PreTokenGeneration (clientMetadata from RespondToAuthChallenge is forwarded).
  *
- * @returns {{ accessToken, idToken, refreshToken }}
+ * @returns {{ tokens } | { session, challengeParameters, requiresRetry }}
  */
 async function respondToStepUpChallenge(username, session, otp, bookingAmount, clientId) {
-  const command = new RespondToAuthChallengeCommand({
+  const response = await client.send(new RespondToAuthChallengeCommand({
     ChallengeName: 'CUSTOM_CHALLENGE',
     ClientId: clientId,
     Session: session,
-    ChallengeResponses: {
-      USERNAME: username,
-      ANSWER: otp,
-    },
+    ChallengeResponses: { USERNAME: username, ANSWER: otp },
+    // clientMetadata here DOES reach Lambda triggers
     ClientMetadata: {
       bookingAmount: String(bookingAmount),
       stepUp: 'true',
     },
-  });
-
-  const response = await client.send(command);
+  }));
 
   if (response.AuthenticationResult) {
-    return {
-      accessToken: response.AuthenticationResult.AccessToken,
-      idToken: response.AuthenticationResult.IdToken,
-      refreshToken: response.AuthenticationResult.RefreshToken,
-    };
+    return { tokens: extractTokens(response.AuthenticationResult), requiresRetry: false };
   }
 
   if (response.ChallengeName === 'CUSTOM_CHALLENGE') {
-    // Wrong OTP — another attempt allowed
     return {
-      session: response.Session,
-      challengeParameters: response.ChallengeParameters,
       tokens: null,
       requiresRetry: true,
+      session: response.Session,
+      challengeParameters: response.ChallengeParameters,
     };
   }
 
-  throw new Error(`Unexpected response after challenge: ${response.ChallengeName}`);
+  throw new Error(`Unexpected challenge response: ${response.ChallengeName}`);
 }
 
 /**
  * Decodes a JWT payload without verifying the signature.
- * For display purposes only — always verify signatures in production.
+ * For display purposes in the demo only — always verify in production.
  */
 function decodeJwtPayload(token) {
   const parts = token.split('.');
   if (parts.length !== 3) throw new Error('Invalid JWT format');
-  const payload = Buffer.from(parts[1], 'base64url').toString('utf8');
-  return JSON.parse(payload);
+  return JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
+}
+
+function extractTokens(result) {
+  return {
+    accessToken: result.AccessToken,
+    idToken: result.IdToken,
+    refreshToken: result.RefreshToken,
+  };
 }
 
 module.exports = { signIn, initiateStepUp, respondToStepUpChallenge, decodeJwtPayload };

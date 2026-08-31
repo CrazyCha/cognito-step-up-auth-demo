@@ -13,7 +13,7 @@ new StepUpAuthStack(app, 'StepUpAuthStack', {
   otpExpirySeconds: app.node.tryGetContext('otpExpirySeconds')
     ? Number(app.node.tryGetContext('otpExpirySeconds'))
     : 300,
-  otpDeliveryMode: app.node.tryGetContext('otpDeliveryMode') ?? 'email',
+  otpDeliveryMode: app.node.tryGetContext('otpDeliveryMode') ?? 'console',
   fromEmail: app.node.tryGetContext('fromEmail') ?? '',
 
   env: {

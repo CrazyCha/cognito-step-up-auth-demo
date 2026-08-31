@@ -1,0 +1,9 @@
+{
+  "StepUpAuthStack": {
+    "UserPoolClientId": "5834l1er07o5ejlf6opctbvaip",
+    "UserPoolId": "us-east-1_afcdCBNfc",
+    "OtpTableName": "StepUpAuth-OtpStore-StepUpAuthStack",
+    "AwsRegion": "us-east-1",
+    "BookingThreshold": "5000"
+  }
+}

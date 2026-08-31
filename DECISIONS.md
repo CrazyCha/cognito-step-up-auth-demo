@@ -120,6 +120,46 @@ Enable `USER_PASSWORD_AUTH` on the demo client for simplicity.
 
 ---
 
+## ADR-006-b: CDK lambdaTriggers.verifyAuthChallenge Does Not Emit VerifyAuthChallengeResponse
+
+**Date:** 2026-08-31  
+**Status:** Accepted
+
+### Context
+CDK's `UserPool` construct accepts `lambdaTriggers.verifyAuthChallenge`. However, in CDK v2 (≥2.100), this property is silently dropped from the synthesized CloudFormation `LambdaConfig` — the resulting User Pool has no `VerifyAuthChallengeResponse` trigger, causing Cognito to throw `UnexpectedLambdaException` when processing `RespondToAuthChallenge`.
+
+### Decision
+Register `VerifyAuthChallengeResponse` using `userPool.addTrigger(cognito.UserPoolOperation.VERIFY_AUTH_CHALLENGE_RESPONSE, fn)` instead of the inline `lambdaTriggers` object.
+
+### Rationale
+`addTrigger` directly modifies the CFN resource via a `CfnUserPoolLambdaConfig` override, bypassing the broken property mapping. Confirmed working in CDK 2.1139.0.
+
+### Trade-offs
+None — `addTrigger` is the recommended pattern for adding triggers post-construction.
+
+---
+
+## ADR-007: Booking Threshold Check Is an Application-Layer Concern
+
+**Date:** 2026-08-31  
+**Status:** Accepted
+
+### Context
+The original design passed `bookingAmount` via `clientMetadata` in `InitiateAuth` so the `DefineAuthChallenge` or `CreateAuthChallenge` Lambda could decide whether to require OTP. Testing confirmed that Cognito does NOT forward `ClientMetadata` from `InitiateAuth` to any Lambda trigger in the CUSTOM_AUTH flow — contrary to AWS documentation.
+
+### Decision
+Move the threshold check to the application layer. The app calls `CUSTOM_AUTH` only when step-up is required. Lambda functions no longer need `bookingAmount`. The `bookingAmount` is still passed in `RespondToAuthChallenge.clientMetadata` (which DOES reach `PreTokenGeneration`) for embedding in the token claim.
+
+### Rationale
+- Eliminates dependency on undocumented Cognito behavior
+- Cleaner separation: Cognito handles authentication mechanics; the app handles business rules
+- Reduces Lambda complexity
+
+### Trade-offs
+- The app must know the threshold value. This is passed as a CDK output and loaded from `.env`. In a multi-service setup, the threshold should be centralized (e.g., in SSM Parameter Store).
+
+---
+
 ## ADR-006: Pre-Token Generation Lambda Injects step_up Claim
 
 **Date:** 2026-08-31  

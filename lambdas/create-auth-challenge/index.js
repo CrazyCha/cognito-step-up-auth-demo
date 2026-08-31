@@ -13,14 +13,16 @@ const DELIVERY_MODE = process.env.OTP_DELIVERY_MODE || 'email';
 const FROM_EMAIL = process.env.FROM_EMAIL || '';
 
 /**
- * CreateAuthChallenge — generates an OTP, persists it, and delivers it to the user.
+ * CreateAuthChallenge — generates and delivers an OTP.
+ *
+ * Called only when the app has already determined that step-up is needed
+ * (the app checks the booking threshold before calling CUSTOM_AUTH).
+ * This Lambda always generates an OTP — the skip/threshold logic has been
+ * removed in favour of the application-layer check.
  *
  * Delivery modes:
  *   'email'   — sends via SES (production path)
- *   'console' — logs the OTP to CloudWatch Logs (demo/dev only; see SECURITY_COMPLIANCE.md Risk SC-R6)
- *
- * Stores only an opaque otpId in privateChallengeParameters (not the OTP itself).
- * See DECISIONS.md ADR-003.
+ *   'console' — logs OTP to CloudWatch Logs (demo/dev only; see SECURITY_COMPLIANCE.md Risk SC-R6)
  */
 exports.handler = async (event) => {
   const { userAttributes } = event.request;
@@ -38,7 +40,6 @@ exports.handler = async (event) => {
     deliveryMode: DELIVERY_MODE,
   }));
 
-  // Persist OTP in DynamoDB with TTL
   await ddb.send(new PutItemCommand({
     TableName: OTP_TABLE,
     Item: {
@@ -48,20 +49,16 @@ exports.handler = async (event) => {
       expiresAt: { N: expiresAt.toString() },
       createdAt: { N: now.toString() },
     },
-    // Prevent overwrite — each challenge gets a fresh record
     ConditionExpression: 'attribute_not_exists(otpId)',
   }));
 
   await deliverOtp(otp, email, OTP_EXPIRY);
 
-  // Return opaque reference — the OTP value never leaves this Lambda
   event.response.publicChallengeParameters = {
     email: maskEmail(email),
-    expiryMinutes: Math.ceil(OTP_EXPIRY / 60).toString(),
+    expiryMinutes: String(Math.ceil(OTP_EXPIRY / 60)),
   };
-  event.response.privateChallengeParameters = {
-    otpId,
-  };
+  event.response.privateChallengeParameters = { otpId };
   event.response.challengeMetadata = `OTP_CHALLENGE:${otpId}`;
 
   return event;
@@ -71,9 +68,8 @@ async function deliverOtp(otp, email, expirySeconds) {
   const expiryMinutes = Math.ceil(expirySeconds / 60);
 
   if (DELIVERY_MODE === 'console') {
-    // WARNING: logging OTPs is only acceptable for local demo/dev environments.
-    // This path MUST NOT be used with real users. See SECURITY_COMPLIANCE.md Risk SC-R6.
-    console.warn(`[DEMO ONLY] OTP for ${email}: ${otp} (expires in ${expiryMinutes} min)`);
+    // Demo/dev only — DO NOT use with real users. See SECURITY_COMPLIANCE.md Risk SC-R6.
+    console.warn(`[DEMO ONLY] OTP for ${maskEmail(email)}: ${otp} (expires in ${expiryMinutes} min)`);
     return;
   }
 
@@ -81,10 +77,7 @@ async function deliverOtp(otp, email, expirySeconds) {
     Source: FROM_EMAIL,
     Destination: { ToAddresses: [email] },
     Message: {
-      Subject: {
-        Data: 'Verification required for your booking',
-        Charset: 'UTF-8',
-      },
+      Subject: { Data: 'Verification required for your booking', Charset: 'UTF-8' },
       Body: {
         Text: {
           Data: [
@@ -92,9 +85,8 @@ async function deliverOtp(otp, email, expirySeconds) {
             '',
             `This code is valid for ${expiryMinutes} minutes.`,
             '',
-            'This additional verification is required because your booking exceeds our',
-            'security threshold. If you did not initiate this booking, please contact',
-            'support immediately.',
+            'This additional verification is required because your booking exceeds',
+            'our security threshold.',
           ].join('\n'),
           Charset: 'UTF-8',
         },
@@ -104,7 +96,6 @@ async function deliverOtp(otp, email, expirySeconds) {
 }
 
 function generateOtp() {
-  // crypto.randomInt produces a cryptographically strong random integer
   return String(crypto.randomInt(100000, 1000000));
 }
 

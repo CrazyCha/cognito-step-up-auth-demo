@@ -1,0 +1,7 @@
+node_modules/
+infra/cdk.out/
+infra/dist/
+infra/node_modules/
+app/node_modules/
+app/.env
+*.js.map
