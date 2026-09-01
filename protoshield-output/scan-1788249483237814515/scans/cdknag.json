@@ -1,0 +1,97 @@
+{
+  "schema_version": "1.0",
+  "findings": [
+    {
+      "rule": "AwsSolutions-COG2",
+      "message": "The Cognito user pool does not require MFA.",
+      "severity": "medium",
+      "suppressed": true,
+      "locations": [
+        {
+          "file": "infra"
+        }
+      ],
+      "suppression_reason": "This project IS a step-up (MFA) authentication demo. The CUSTOM_AUTH OTP challenge flow provides the second factor. Enabling Cognito-level MFA would conflict with the demo purpose.",
+      "properties": {
+        "resource": "StepUpAuthStack/UserPool/Resource"
+      }
+    },
+    {
+      "rule": "AwsSolutions-COG8",
+      "message": "The Cognito user pool is not on the plus tier / feature plan.",
+      "severity": "medium",
+      "suppressed": true,
+      "locations": [
+        {
+          "file": "infra"
+        }
+      ],
+      "suppression_reason": "Cognito Plus tier is not required for this prototype. The standard tier provides all features needed for the step-up auth demo flow.",
+      "properties": {
+        "resource": "StepUpAuthStack/UserPool/Resource"
+      }
+    },
+    {
+      "rule": "AwsSolutions-IAM4",
+      "message": "The IAM user, role, or group uses AWS managed policies.",
+      "severity": "medium",
+      "suppressed": true,
+      "locations": [
+        {
+          "file": "infra"
+        }
+      ],
+      "suppression_reason": "AWSLambdaBasicExecutionRole is auto-attached by CDK and grants only CloudWatch Logs write access, which is required for operational visibility.",
+      "properties": {
+        "resource": "StepUpAuthStack/CreateAuthChallenge/ServiceRole/Resource"
+      }
+    },
+    {
+      "rule": "AwsSolutions-IAM4",
+      "message": "The IAM user, role, or group uses AWS managed policies.",
+      "severity": "medium",
+      "suppressed": true,
+      "locations": [
+        {
+          "file": "infra"
+        }
+      ],
+      "suppression_reason": "AWSLambdaBasicExecutionRole is auto-attached by CDK and grants only CloudWatch Logs write access, which is required for operational visibility.",
+      "properties": {
+        "resource": "StepUpAuthStack/DefineAuthChallenge/ServiceRole/Resource"
+      }
+    },
+    {
+      "rule": "AwsSolutions-IAM4",
+      "message": "The IAM user, role, or group uses AWS managed policies.",
+      "severity": "medium",
+      "suppressed": true,
+      "locations": [
+        {
+          "file": "infra"
+        }
+      ],
+      "suppression_reason": "AWSLambdaBasicExecutionRole is auto-attached by CDK and grants only CloudWatch Logs write access, which is required for operational visibility.",
+      "properties": {
+        "resource": "StepUpAuthStack/PreTokenGeneration/ServiceRole/Resource"
+      }
+    },
+    {
+      "rule": "AwsSolutions-IAM4",
+      "message": "The IAM user, role, or group uses AWS managed policies.",
+      "severity": "medium",
+      "suppressed": true,
+      "locations": [
+        {
+          "file": "infra"
+        }
+      ],
+      "suppression_reason": "AWSLambdaBasicExecutionRole is auto-attached by CDK and grants only CloudWatch Logs write access, which is required for operational visibility.",
+      "properties": {
+        "resource": "StepUpAuthStack/VerifyAuthChallenge/ServiceRole/Resource"
+      }
+    }
+  ],
+  "errors": [],
+  "properties": {}
+}

@@ -1,21 +1,14 @@
-=== ProtoShield Scan Started: 2026-09-01 06:35:07 UTC ===
+=== ProtoShield Scan Started: 2026-09-01 07:58:03 UTC ===
 INFO: Resolved git-ignored paths for project copy /home/ec2-user/cognito-step-up-auth-demo 4
-INFO: Building unified base image protoshield-base:9c5e9606
-INFO: Successfully built container image protoshield-base:9c5e9606
-INFO: Building unified plugin-tool layer protoshield:9c5e9606-3a40dc3c4a4e protoshield-base:9c5e9606
-INFO: Successfully built container image protoshield:9c5e9606-3a40dc3c4a4e
-INFO: Cleaning up old base container images protoshield 9c5e9606
-INFO: Cleaning up old base container images protoshield-base 9c5e9606
-INFO: Cleaning up old base container images protoshield-project 9c5e9606
 INFO: Resolved git-ignored paths for project copy /home/ec2-user/cognito-step-up-auth-demo 4
 INFO: Generated combined .dockerignore for project copy 16 true 4 false 0
 INFO: Building project-specific container protoshield-project:9c5e9606-c4bd426a8dd4
 INFO: Successfully built project-specific container protoshield-project:9c5e9606-c4bd426a8dd4
 === ProtoShield: Starting scanner phase ===
-=== ProtoShield Scanner Started: 2026-09-01 06:38:20 UTC ===
+=== ProtoShield Scanner Started: 2026-09-01 07:58:08 UTC ===
 Starting security scans on /project/ directory...
 Results will be saved to /output/scans/ directory
-Environment: PROTOSHIELD_SCAN_ID=1788244507219720425
+Environment: PROTOSHIELD_SCAN_ID=1788249483237814515
 STAGE: scanning
 PROGRESS: Security scans starting...
 Running security scans in parallel...
@@ -44,8 +37,8 @@ All scans and analysis completed
 STAGE: analysis_pending
 PROGRESS: Scans finished, starting analysis phase
 === ProtoShield: Scanner phase complete ===
-All scans completed. Results saved to /output/scans/ directory
 === ProtoShield: Starting agentic findings phase ===
+All scans completed. Results saved to /output/scans/ directory
    Building protoshield-plugin-sdk @ file:///app/sdk
       Built protoshield-plugin-sdk @ file:///app/sdk
 Uninstalled 1 package in 1ms
@@ -61,11 +54,11 @@ PROGRESS: Initializing security analysis...
 Analyzing project: cognito-step-up-auth-demo
 STAGE: analysis
 PROGRESS: Running security analysis agents...
-=== ProtoShield Analysis Started: 2026-09-01 06:39:26 UTC ===
-Plugin agent 'secrets' did not write its detail file on first pass; re-invoking to force completion.
+=== ProtoShield Analysis Started: 2026-09-01 07:59:13 UTC ===
 Plugin agent 'semgrep' did not write its detail file on first pass; re-invoking to force completion.
-Plugin agent 'cve' did not write its detail file on first pass; re-invoking to force completion.
+Plugin agent 'secrets' did not write its detail file on first pass; re-invoking to force completion.
 Plugin agent 'checkov' did not write its detail file on first pass; re-invoking to force completion.
+Plugin agent 'cve' did not write its detail file on first pass; re-invoking to force completion.
 Plugin agent 'cdknag' did not write its detail file on first pass; re-invoking to force completion.
 tool_name=<verify_and_recover>, raw_input=<> | failed to parse tool input json, defaulting to empty dict
 Detail file verification: 7/7 files found
@@ -75,7 +68,6 @@ PROGRESS: Analysis complete; reviewing suppressions
 Analysis completed. Results saved to output file.
 Suppression analysis: reviewing cdknag suppressions
 Suppression analysis: reviewing checkov suppressions
-Plugin agent 'checkov-suppressions' did not write its detail file on first pass; re-invoking to force completion.
 Suppression analysis: reviewing secrets suppressions
 Plugin agent 'secrets-suppressions' did not write its detail file on first pass; re-invoking to force completion.
 Suppression analysis: reviewing semgrep suppressions
@@ -86,18 +78,16 @@ Running action plugins...
 Running action plugin: markdown-report
 tool_name=<calculate_severity_totals>, raw_input=<> | failed to parse tool input json, defaulting to empty dict
 tool_name=<list_detail_files>, raw_input=<> | failed to parse tool input json, defaulting to empty dict
-Calculated totals: Critical=1, High=11, Medium=1, Low=0
+Calculated totals: Critical=0, High=1, Medium=1, Low=0
 tool_name=<assemble_final_report>, raw_input=<> | failed to parse tool input json, defaulting to empty dict
 Starting report assembly...
 Replaced Summary by Tool table with deterministic version (7 rows)
-Injected incomplete-coverage banner (1 scanner(s): cdknag)
 Report assembly complete: /output/summary.md
 Appended 7 sub-agent sections
 Appended 'Scanners Not Run' section with 2 skipped scanner(s)
-Appended 'Incomplete Scan Coverage' section with 1 scanner(s)
 Validating final report...
 Final report validation complete
 Action plugin markdown-report completed successfully
 Action plugins complete: 1 executed, 0 failed
-=== Analysis Completed: 2026-09-01 06:42:47 UTC (201.8s total) ===
+=== Analysis Completed: 2026-09-01 08:04:10 UTC (297.4s total) ===
 === ProtoShield: Analysis phase complete ===

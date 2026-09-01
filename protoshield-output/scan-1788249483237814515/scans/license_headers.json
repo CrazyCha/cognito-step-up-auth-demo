@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0",
+  "findings": [],
+  "errors": [],
+  "properties": {
+    "license_text": "Apache 2.0",
+    "license_file_found": true,
+    "files_scanned": 9,
+    "files_with_header": 9,
+    "files_missing_header": 0,
+    "compliance_rate": 100.0
+  }
+}
