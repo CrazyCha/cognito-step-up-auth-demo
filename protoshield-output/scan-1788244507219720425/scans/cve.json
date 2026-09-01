@@ -1,0 +1,43 @@
+{
+  "schema_version": "1.0",
+  "findings": [
+    {
+      "rule": "GHSA-67mh-4wv8-2f99",
+      "message": "esbuild enables any website to send any requests to the development server and read the response",
+      "severity": "medium",
+      "installed_version": "0.21.5",
+      "fixed_version": "0.25.0",
+      "cvss_score": 5.3,
+      "cvss_vector": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:H/I:N/A:N",
+      "references": [
+        "https://github.com/evanw/esbuild/security/advisories/GHSA-67mh-4wv8-2f99",
+        "https://github.com/evanw/esbuild/commit/de85afd65edec9ebc44a11e245fd9e9a2e99760d",
+        "https://github.com/evanw/esbuild"
+      ],
+      "cwe": [
+        "CWE-346"
+      ],
+      "remediation": "Upgrade esbuild to a fixed version: 0.25.0.",
+      "locations": [
+        {
+          "file": "infra/package-lock.json"
+        },
+        {
+          "file": "package-lock.json"
+        }
+      ],
+      "properties": {
+        "package": "esbuild"
+      }
+    }
+  ],
+  "errors": [],
+  "properties": {
+    "packages_affected": [
+      "esbuild"
+    ],
+    "unique_cves": 1,
+    "dependency_files_scanned": 2,
+    "manifests_without_lockfile": 0
+  }
+}

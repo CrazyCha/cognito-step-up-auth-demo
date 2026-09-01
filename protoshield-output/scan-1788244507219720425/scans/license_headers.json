@@ -1,0 +1,146 @@
+{
+  "schema_version": "1.0",
+  "findings": [
+    {
+      "rule": "LICENSE_FILE_MISSING",
+      "message": "No project-root license file (LICENSE/LICENSE.txt/LICENSE.md/COPYING) found.",
+      "severity": "high",
+      "remediation": "Add a Apache 2.0 license file to the project root (one of: LICENSE, LICENSE.txt, LICENSE.md, COPYING)."
+    },
+    {
+      "rule": "LICENSE_HEADER_MISSING",
+      "message": "License header issue (missing license)",
+      "severity": "high",
+      "locations": [
+        {
+          "file": "app/src/auth.js"
+        }
+      ],
+      "remediation": "Add a Apache 2.0 license header to the top of this file.",
+      "properties": {
+        "reason": "missing license"
+      }
+    },
+    {
+      "rule": "LICENSE_HEADER_MISSING",
+      "message": "License header issue (missing license)",
+      "severity": "high",
+      "locations": [
+        {
+          "file": "app/src/demo.js"
+        }
+      ],
+      "remediation": "Add a Apache 2.0 license header to the top of this file.",
+      "properties": {
+        "reason": "missing license"
+      }
+    },
+    {
+      "rule": "LICENSE_HEADER_MISSING",
+      "message": "License header issue (missing license)",
+      "severity": "high",
+      "locations": [
+        {
+          "file": "app/src/setup.js"
+        }
+      ],
+      "remediation": "Add a Apache 2.0 license header to the top of this file.",
+      "properties": {
+        "reason": "missing license"
+      }
+    },
+    {
+      "rule": "LICENSE_HEADER_MISSING",
+      "message": "License header issue (missing license)",
+      "severity": "high",
+      "locations": [
+        {
+          "file": "infra/bin/app.ts"
+        }
+      ],
+      "remediation": "Add a Apache 2.0 license header to the top of this file.",
+      "properties": {
+        "reason": "missing license"
+      }
+    },
+    {
+      "rule": "LICENSE_HEADER_MISSING",
+      "message": "License header issue (missing license)",
+      "severity": "high",
+      "locations": [
+        {
+          "file": "infra/lib/step-up-auth-stack.ts"
+        }
+      ],
+      "remediation": "Add a Apache 2.0 license header to the top of this file.",
+      "properties": {
+        "reason": "missing license"
+      }
+    },
+    {
+      "rule": "LICENSE_HEADER_MISSING",
+      "message": "License header issue (missing license)",
+      "severity": "high",
+      "locations": [
+        {
+          "file": "lambdas/create-auth-challenge/index.js"
+        }
+      ],
+      "remediation": "Add a Apache 2.0 license header to the top of this file.",
+      "properties": {
+        "reason": "missing license"
+      }
+    },
+    {
+      "rule": "LICENSE_HEADER_MISSING",
+      "message": "License header issue (missing license)",
+      "severity": "high",
+      "locations": [
+        {
+          "file": "lambdas/define-auth-challenge/index.js"
+        }
+      ],
+      "remediation": "Add a Apache 2.0 license header to the top of this file.",
+      "properties": {
+        "reason": "missing license"
+      }
+    },
+    {
+      "rule": "LICENSE_HEADER_MISSING",
+      "message": "License header issue (missing license)",
+      "severity": "high",
+      "locations": [
+        {
+          "file": "lambdas/pre-token-generation/index.js"
+        }
+      ],
+      "remediation": "Add a Apache 2.0 license header to the top of this file.",
+      "properties": {
+        "reason": "missing license"
+      }
+    },
+    {
+      "rule": "LICENSE_HEADER_MISSING",
+      "message": "License header issue (missing license)",
+      "severity": "high",
+      "locations": [
+        {
+          "file": "lambdas/verify-auth-challenge/index.js"
+        }
+      ],
+      "remediation": "Add a Apache 2.0 license header to the top of this file.",
+      "properties": {
+        "reason": "missing license"
+      }
+    }
+  ],
+  "errors": [],
+  "properties": {
+    "license_text": "Apache 2.0",
+    "license_file_found": false,
+    "files_scanned": 9,
+    "files_with_header": 0,
+    "files_missing_header": 9,
+    "compliance_rate": 0.0
+  }
+}
