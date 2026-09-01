@@ -207,6 +207,34 @@ The demo prints each step of the auth flow with timing, and displays the decoded
 
 ---
 
+## Post-Deploy Verification
+
+After `cdk deploy` completes, verify the stack is healthy:
+
+```bash
+# 1. Confirm stack outputs exist
+cat app/.cdk-outputs.json | grep -E 'UserPoolId|ClientId|OtpTableName'
+
+# 2. Verify Lambda functions are deployed
+aws lambda list-functions \
+  --query "Functions[?starts_with(FunctionName,'StepUpAuthStack')].FunctionName" \
+  --output table
+
+# 3. Verify Cognito User Pool is active
+aws cognito-idp describe-user-pool \
+  --user-pool-id "$(jq -r '.StepUpAuthStack.UserPoolId' app/.cdk-outputs.json)" \
+  --query 'UserPool.Status'
+
+# 4. Verify DynamoDB table is active
+aws dynamodb describe-table \
+  --table-name "$(jq -r '.StepUpAuthStack.OtpTableName' app/.cdk-outputs.json)" \
+  --query 'Table.TableStatus'
+```
+
+All commands should succeed with no errors. If any resource is missing, run `cdk deploy` again and check CloudFormation events for failures.
+
+---
+
 ## Tearing Down
 
 ```bash
@@ -215,3 +243,16 @@ cdk destroy
 ```
 
 > **Note:** The DynamoDB table and Cognito User Pool use `RemovalPolicy.DESTROY` intentionally for non-production use. Change to `RemovalPolicy.RETAIN` before any production promotion. See `SECURITY_COMPLIANCE.md`.
+
+---
+
+## Known Limitations
+
+| Limitation | Impact | Mitigation Path |
+|------------|--------|-----------------|
+| **Prototype only — not production-hardened** | No WAF, no custom domain, no VPC integration | See `NEXT_STEPS.md` for production checklist |
+| **Single-region deployment** | No cross-region failover | Add a secondary region with Route 53 health checks for DR |
+| **Console OTP delivery mode** | OTPs printed to CloudWatch Logs in demo mode; not suitable for real users | Switch `OTP_DELIVERY_MODE=email` and verify SES sender in production |
+| **No OTP rate limiting** | A malicious caller could trigger excessive OTP emails | Add per-user throttle in CreateAuthChallenge Lambda or use AWS WAF rate rules |
+| **Cognito Standard tier** | No advanced security features (compromised credential detection, adaptive auth) | Upgrade to Cognito Plus tier and enable advanced security in production |
+| **RemovalPolicy.DESTROY on all resources** | `cdk destroy` deletes user data irreversibly | Change to `RemovalPolicy.RETAIN` before any production promotion |
