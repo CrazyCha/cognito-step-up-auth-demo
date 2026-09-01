@@ -21,7 +21,6 @@ require('dotenv').config();
 const readline = require('readline');
 const { signIn, initiateStepUp, respondToStepUpChallenge, decodeJwtPayload } = require('./auth');
 
-const USER_POOL_ID = process.env.USER_POOL_ID;
 const CLIENT_ID = process.env.CLIENT_ID;
 const EMAIL = process.env.TEST_USER_EMAIL;
 const PASSWORD = process.env.TEST_USER_PASSWORD;
