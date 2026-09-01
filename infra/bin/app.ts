@@ -1,9 +1,15 @@
 #!/usr/bin/env node
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 import 'source-map-support/register';
 import * as cdk from 'aws-cdk-lib';
+import { Aspects } from 'aws-cdk-lib';
+import { AwsSolutionsChecks } from 'cdk-nag';
 import { StepUpAuthStack } from '../lib/step-up-auth-stack';
 
 const app = new cdk.App();
+Aspects.of(app).add(new AwsSolutionsChecks({ verbose: true }));
 
 new StepUpAuthStack(app, 'StepUpAuthStack', {
   // Override defaults via context: cdk deploy -c bookingThreshold=3000

@@ -1,3 +1,6 @@
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 'use strict';
 
 const MAX_ATTEMPTS = parseInt(process.env.MAX_ATTEMPTS || '3', 10);

@@ -1,3 +1,6 @@
+// Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: Apache-2.0
+
 import * as path from 'path';
 import * as cdk from 'aws-cdk-lib';
 import * as cognito from 'aws-cdk-lib/aws-cognito';
@@ -88,6 +91,10 @@ export class StepUpAuthStack extends cdk.Stack {
 
     this.otpTable.grantWriteData(createAuthChallengeFn);
 
+    // SES wildcard resource: this demo runs in console delivery mode (no SES calls).
+    // When otpDeliveryMode='email', the wildcard is acceptable for a prototype because
+    // the verified identity ARN depends on the operator's SES setup and is not known at
+    // synth time. Production deployments must scope this to a specific identity ARN.
     if (otpDeliveryMode === 'email') {
       createAuthChallengeFn.addToRolePolicy(
         new iam.PolicyStatement({
