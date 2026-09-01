@@ -124,14 +124,48 @@ To hand off this project to the customer engineering team:
 
 ---
 
-## 8. Cost Estimate (monthly, non-production)
+## 8. Cost Estimate (monthly)
+
+### Assumptions
+
+- Cognito free tier: 50,000 MAU (Always Free, no 12-month expiry).
+- Lambda free tier: 1M requests/month, 400,000 GB-seconds (Always Free).
+- DynamoDB free tier: 25 WCU / 25 RCU (Always Free); PAY_PER_REQUEST pricing at $1.25/M write, $0.25/M read above free tier.
+- SES: $0.10 per 1,000 emails sent.
+- All estimates are for us-east-1 pricing. Actual costs vary by region.
+
+### Non-production / Demo (~100 MAU)
 
 | Service | Usage assumption | Estimated cost |
 |---------|-----------------|---------------|
-| Cognito | 100 MAU, 1000 auth ops | ~$0 (free tier) |
-| Lambda | 3 triggers × 1000 invocations | ~$0 (free tier) |
+| Cognito | 100 MAU, 1,000 auth ops | ~$0 (free tier) |
+| Lambda | 4 triggers × 1,000 invocations, 256 MB, <1s avg | ~$0 (free tier) |
 | DynamoDB | PAY_PER_REQUEST, <10K OTPs/month | ~$0.01 |
-| SES | 1000 OTP emails/month | ~$0.10 |
-| **Total** | | **< $1/month (non-prod)** |
+| SES | 1,000 OTP emails/month | ~$0.10 |
+| **Total** | | **< $1/month** |
 
-Production estimates depend on MAU and booking volume. Request a Well-Architected cost review before go-live.
+### Pilot (~5,000 MAU)
+
+| Service | Usage assumption | Estimated cost |
+|---------|-----------------|---------------|
+| Cognito | 5,000 MAU, 50K auth ops | ~$0 (free tier covers 50K MAU) |
+| Lambda | 4 triggers × 50K invocations, 256 MB | ~$0 (free tier) |
+| DynamoDB | 50K writes + 50K reads/month | ~$0.07 |
+| SES | 50K OTP emails/month | ~$5.00 |
+| **Total** | | **~$5/month** |
+
+### Production (~100,000 MAU)
+
+| Service | Usage assumption | Estimated cost |
+|---------|-----------------|---------------|
+| Cognito | 100K MAU, 1M auth ops | ~$275 (50K free + 50K × $0.0055) |
+| Lambda | 4 triggers × 1M invocations, 256 MB, <1s avg | ~$0 (within free tier) |
+| DynamoDB | 1M writes + 1M reads/month | ~$1.50 |
+| SES | 1M OTP emails/month | ~$100 |
+| **Total** | | **~$375/month** |
+
+### Cost trade-offs
+
+- **DynamoDB billing mode**: PAY_PER_REQUEST is optimal up to ~50K MAU. Above that, provisioned capacity with auto-scaling may reduce costs by 30–50% at the expense of capacity planning complexity (see ADR-003).
+- **SES costs scale linearly** with OTP volume. To reduce costs at scale, consider SMS (SNS) as an alternative delivery channel — higher per-message cost but higher conversion rates.
+- **Cognito pricing** is the dominant cost driver at production scale. The first 50,000 MAU are Always Free (no 12-month expiry); beyond that, pricing is tiered ($0.0055/MAU for next 50K, then $0.0046/MAU).
