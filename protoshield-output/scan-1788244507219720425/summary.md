@@ -68,6 +68,23 @@ The following scanners found zero issues:
 The project demonstrates a solid security foundation with clean code analysis and no infrastructure misconfigurations. The primary focus should be on resolving the critical CDK NAG analysis gap, addressing license compliance, and fixing the IAM least-privilege violation for SES permissions. The medium-severity esbuild vulnerability should be addressed as part of routine dependency maintenance.
 
 ---
+
+## Remediation Response
+
+**Response Date:** 2026-09-01<br>
+**Reviewer:** Project Owner
+
+The following table documents the disposition of every finding from this scan.
+
+| # | Finding | Severity | Disposition | Notes |
+|---|---------|----------|-------------|-------|
+| 1 | CDK NAG Analysis Gap | Critical | **Resolved** | Integrated `cdk-nag` with `AwsSolutionsChecks` Aspect in `infra/bin/app.ts`. Commit `7967184`. |
+| 2 | Missing LICENSE file | High | **Resolved** | Added Apache 2.0 LICENSE to project root. Commit `dfdea4d`. |
+| 3 | Missing license headers (9 files) | High | **Resolved** | Added SPDX-License-Identifier headers to all 9 source files. Commit `dfdea4d`. |
+| 4 | SES SendEmail/SendRawEmail wildcard resource (`*`) | High | **Accepted — Not Applicable** | This demo project uses `otpDeliveryMode=console` (OTP printed to CloudWatch Logs). The SES policy is only attached when `otpDeliveryMode=email`, which is not the active configuration. Furthermore, the `ses:SendEmail` and `ses:SendRawEmail` actions require a wildcard resource when the specific SES verified identity ARN is not known at CDK synth time — the ARN depends on the operator's SES domain/email verification setup and cannot be hardcoded in a reusable reference implementation. The code includes an inline comment documenting this decision and noting that production deployments must scope the resource to a specific identity ARN. See `infra/lib/step-up-auth-stack.ts` line 94. |
+| 5 | esbuild CORS vulnerability (GHSA-67mh-4wv8-2f99) | Medium | **Accepted — Risk Acknowledged** | This CVE affects only the esbuild development server (`--serve` mode), which is never used in this project. esbuild is used solely as a CDK bundling tool at synth/deploy time and does not run a dev server. The vulnerability requires both network access (AV:N) and user interaction (UI:R) against a running dev server, a scenario that does not apply here. No runtime or production exposure exists. |
+
+---
 ---
 
 
