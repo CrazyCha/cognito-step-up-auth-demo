@@ -43,19 +43,29 @@ exports.handler = async (event) => {
     deliveryMode: DELIVERY_MODE,
   }));
 
-  await ddb.send(new PutItemCommand({
-    TableName: OTP_TABLE,
-    Item: {
-      otpId: { S: otpId },
-      otp: { S: otp },
-      userId: { S: event.userName },
-      expiresAt: { N: expiresAt.toString() },
-      createdAt: { N: now.toString() },
-    },
-    ConditionExpression: 'attribute_not_exists(otpId)',
-  }));
+  try {
+    await ddb.send(new PutItemCommand({
+      TableName: OTP_TABLE,
+      Item: {
+        otpId: { S: otpId },
+        otp: { S: otp },
+        userId: { S: event.userName },
+        expiresAt: { N: expiresAt.toString() },
+        createdAt: { N: now.toString() },
+      },
+      ConditionExpression: 'attribute_not_exists(otpId)',
+    }));
+  } catch (err) {
+    console.error('Failed to store OTP in DynamoDB:', err.message);
+    throw new Error('OTP generation failed — unable to store challenge');
+  }
 
-  await deliverOtp(otp, email, OTP_EXPIRY);
+  try {
+    await deliverOtp(otp, email, OTP_EXPIRY);
+  } catch (err) {
+    console.error('Failed to deliver OTP:', err.message);
+    throw new Error('OTP delivery failed — unable to send challenge');
+  }
 
   event.response.publicChallengeParameters = {
     email: maskEmail(email),
