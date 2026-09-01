@@ -7,6 +7,7 @@ import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
+import { NagSuppressions } from 'cdk-nag';
 import { Construct } from 'constructs';
 
 export interface StepUpAuthStackProps extends cdk.StackProps {
@@ -46,6 +47,7 @@ export class StepUpAuthStack extends cdk.Stack {
       partitionKey: { name: 'otpId', type: dynamodb.AttributeType.STRING },
       timeToLiveAttribute: 'expiresAt',
       billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      pointInTimeRecoverySpecification: { pointInTimeRecoveryEnabled: true },
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
@@ -55,7 +57,7 @@ export class StepUpAuthStack extends cdk.Stack {
     // @aws-sdk/* is included in the Node.js 20.x Lambda managed runtime,
     // so Code.fromAsset (directory zip) works without bundling.
     const lambdaDefaults: Omit<lambda.FunctionProps, 'code' | 'handler' | 'environment'> = {
-      runtime: lambda.Runtime.NODEJS_22_X,
+      runtime: lambda.Runtime.NODEJS_24_X,
       timeout: cdk.Duration.seconds(10),
       memorySize: 256,
     };
@@ -149,7 +151,7 @@ export class StepUpAuthStack extends cdk.Stack {
         requireLowercase: true,
         requireUppercase: true,
         requireDigits: true,
-        requireSymbols: false,
+        requireSymbols: true,
       },
       accountRecovery: cognito.AccountRecovery.EMAIL_ONLY,
       removalPolicy: cdk.RemovalPolicy.DESTROY,
@@ -177,6 +179,31 @@ export class StepUpAuthStack extends cdk.Stack {
       idTokenValidity: cdk.Duration.hours(1),
       refreshTokenValidity: cdk.Duration.days(30),
     });
+
+    // ── CDK NAG Suppressions ───────────────────────────────────────────────────
+    const lambdaFunctions = [
+      defineAuthChallengeFn, createAuthChallengeFn,
+      verifyAuthChallengeFn, preTokenGenerationFn,
+    ];
+    for (const fn of lambdaFunctions) {
+      NagSuppressions.addResourceSuppressions(fn, [
+        {
+          id: 'AwsSolutions-IAM4',
+          reason: 'AWSLambdaBasicExecutionRole is auto-attached by CDK and grants only CloudWatch Logs write access, which is required for operational visibility.',
+        },
+      ], true);
+    }
+
+    NagSuppressions.addResourceSuppressions(this.userPool, [
+      {
+        id: 'AwsSolutions-COG2',
+        reason: 'This project IS a step-up (MFA) authentication demo. The CUSTOM_AUTH OTP challenge flow provides the second factor. Enabling Cognito-level MFA would conflict with the demo purpose.',
+      },
+      {
+        id: 'AwsSolutions-COG8',
+        reason: 'Cognito Plus tier is not required for this prototype. The standard tier provides all features needed for the step-up auth demo flow.',
+      },
+    ]);
 
     // ── Stack Outputs ─────────────────────────────────────────────────────────
     new cdk.CfnOutput(this, 'UserPoolId', {
