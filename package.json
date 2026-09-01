@@ -2,5 +2,13 @@
   "name": "cognito-step-up-auth-demo",
   "version": "1.0.0",
   "private": true,
-  "workspaces": ["infra", "app"]
+  "workspaces": [
+    "infra",
+    "app"
+  ],
+  "devDependencies": {
+    "@aws-sdk/client-dynamodb": "^3.1123.0",
+    "@aws-sdk/client-ses": "^3.1123.0",
+    "jest": "^30.5.1"
+  }
 }
