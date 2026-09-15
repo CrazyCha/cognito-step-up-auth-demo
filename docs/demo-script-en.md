@@ -1,11 +1,15 @@
 # Video Recording Script (English) v2
 
-**Suggested duration:** 12-15 minutes
+**Suggested duration:** 10-13 minutes
 **Suggested layout:** Terminal on the left, editor/docs on the right (switchable)
 
-Changes from v1: added "deployment demo", "security scan walkthrough", and "Holmes quality scan
-walkthrough" sections, and strengthened the "decision rationale" and "extension path" narration —
-covering all 8 rubric-scored points.
+Changes from v1: added "deployment demo" and "security scan walkthrough" sections, and
+strengthened the "decision rationale" and "extension path" narration — covering the 8
+rubric-scored points.
+
+**On D8 (Holmes quality scan):** taking the evaluator's option (b) — `docs/quality-findings.md`
+already documents the baseline findings, the fix commits, and the clean rescan, so this isn't
+narrated on camera; the written record stands as the evidence.
 
 ---
 
@@ -181,8 +185,9 @@ ls
 >
 > On docs: `README.md` is the entry point; `DECISIONS.md` is the ADR log we just covered;
 > `SECURITY_COMPLIANCE.md` is the security design and risk register, coming up; `docs/quality-findings.md`
-> is the written record of the Holmes quality scan, also coming up; `docs/porting-guide.md` covers
-> reusing this pattern for the other two flows.
+> is the full record of the Holmes quality scan findings and fixes — written up in enough detail
+> that I won't repeat it on camera; `docs/porting-guide.md` covers reusing this pattern for the
+> other two flows.
 
 **Action:**
 
@@ -283,28 +288,7 @@ node src/demo.js
 
 ---
 
-## Part 6: Holmes quality scan walkthrough (12:15 - 13:45) — Point 7
-
-**Action:** Open `docs/quality-findings.md`.
-
-**Narration:**
-
-> Code quality was scanned with Holmes, template HolmesCDE, scored against CDE Evaluation Rubric
-> v2 — 12 dimensions.
->
-> The first pass found 3 findings, all high severity: the README was missing a post-deploy
-> verification step, missing a consolidated known-limitations section, and `demo.js` had one dead
-> variable, `USER_POOL_ID`, that was never used. All three were fixed in follow-up commits — the
-> Post-Deploy Verification section we walked through earlier is the fix for the first one.
->
-> After the fixes, the rescan — scan ID `fe1635c0`, same template and rubric — came back with 0
-> findings: 10 of the 12 dimensions scored exemplary, 2 scored acceptable. The full before/after and
-> the specific findings are written up in `docs/quality-findings.md`, so this doesn't depend on me
-> narrating it.
-
----
-
-## Closing: how the customer's team extends this (13:45 - 14:30) — Point 8
+## Closing: how the customer's team extends this (12:15 - 13:00) — Point 8
 
 **Action:** Open `docs/porting-guide.md`, scroll to the Flow 1 / Flow 2 headings — no need to read
 code line by line.

@@ -1,10 +1,14 @@
 # 视频录制脚本（中文版）v2
 
-**建议时长：** 12-15 分钟
+**建议时长：** 10-13 分钟
 **建议布局：** 左边终端，右边编辑器/文档（可切换）
 
-本版本相对 v1 的改动：新增"部署演示""安全扫描讲解""Holmes 质量扫描讲解"三段，
-补强"决策原因"和"后续扩展"两段的台词，覆盖评审要求的全部 8 个打分点。
+本版本相对 v1 的改动：新增"部署演示""安全扫描讲解"两段，补强"决策原因"和
+"后续扩展"两段的台词，覆盖评审要求的 8 个打分点。
+
+**关于 D8（Holmes 质量扫描）：** 走评审给的选项 (b)——`docs/quality-findings.md`
+已经写清楚了 baseline finding、修复 commit、重扫结果，作为书面证据，视频里不再
+口播这部分，省下时间。
 
 ---
 
@@ -153,7 +157,7 @@ ls
 >
 > `infra` 是刚才用到的 CDK 代码。`lambdas` 是四个业务逻辑函数。`app` 是刚才跑的示例应用。
 >
-> 文档这边：`README.md` 是入口；`DECISIONS.md` 是刚才讲的架构决策记录；`SECURITY_COMPLIANCE.md` 是安全设计和风险登记册，等下会讲；`docs/quality-findings.md` 是 Holmes 质量扫描的书面记录，也等下讲；`docs/porting-guide.md` 是移植指南，讲怎么把这套模式复用到另外两个场景。
+> 文档这边：`README.md` 是入口；`DECISIONS.md` 是刚才讲的架构决策记录；`SECURITY_COMPLIANCE.md` 是安全设计和风险登记册，等下会讲；`docs/quality-findings.md` 是 Holmes 质量扫描的 finding 明细和修复记录，写得很完整，这里不重复口播了；`docs/porting-guide.md` 是移植指南，讲怎么把这套模式复用到另外两个场景。
 
 **操作：**
 
@@ -236,21 +240,7 @@ node src/demo.js
 
 ---
 
-## 第六部分：Holmes 质量扫描讲解（12:15 - 13:45）— 覆盖点 7
-
-**操作：** 打开 `docs/quality-findings.md`。
-
-**台词：**
-
-> 代码质量这边用的是 Holmes 扫描，模板是 HolmesCDE，评分标准是 CDE Evaluation Rubric v2，一共 12 个维度。
->
-> 第一次扫描抓到 3 个 finding，都是 high 严重级：README 缺"部署后验证"步骤、README 缺"已知限制"汇总、`demo.js` 里有一个从没被用到的死代码变量 `USER_POOL_ID`。这三个我都在后续 commit 里直接修复了——刚才讲部署那段时候看到的 Post-Deploy Verification 章节，就是修复第一个 finding 的结果。
->
-> 修完之后重新跑了一次扫描，scan ID `fe1635c0`，同样的模板和 rubric，结果是 0 个 finding，12 个维度里 10 个是 exemplary，2 个是 acceptable。这个前后对比和具体的 finding 明细我都写进了 `docs/quality-findings.md`，方便任何人不用等我讲解也能查到。
-
----
-
-## 结束语：后续扩展（13:45 - 14:30）— 覆盖点 8
+## 结束语：后续扩展（12:15 - 13:00）— 覆盖点 8
 
 **操作：** 打开 `docs/porting-guide.md`，滚动到 Flow 1 / Flow 2 的标题即可，不用逐行讲代码。
 
