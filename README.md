@@ -139,6 +139,7 @@ cognito-step-up-auth-demo/
 | PROGRESS.md | Status | Task tracker for delivery work |
 | DECISIONS.md | ADR | Why each major choice was made (including AWS behavior gaps) |
 | SECURITY_COMPLIANCE.md | Governance | Security posture, risk register, production checklist |
+| docs/quality-findings.md | Quality | Holmes scan findings, fixes, and rescan results |
 | NEXT_STEPS.md | Roadmap | Post-delivery optimizations and handoff checklist |
 | docs/architecture.md | Technical | Deep-dive on the auth flow with sequence diagrams |
 | docs/porting-guide.md | Guide | Instructions for porting to loyalty-tier and concierge flows |
